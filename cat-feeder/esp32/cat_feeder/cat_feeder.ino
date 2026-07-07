@@ -93,7 +93,7 @@ bool postFeeding(const char* mealType) {
 void refreshSummary() {
   if (WiFi.status() != WL_CONNECTED) return;
   HTTPClient http;
-  http.begin(API_URL); // GET returns { last_fed_at, today_count }
+  http.begin(SUMMARY_URL); // GET returns { last_fed_at, today_count }
   int code = http.GET();
   if (code != 200) { Serial.printf("GET -> %d\n", code); http.end(); return; }
   String payload = http.getString();

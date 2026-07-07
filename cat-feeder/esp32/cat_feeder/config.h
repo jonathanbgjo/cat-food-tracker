@@ -4,8 +4,11 @@
 #define WIFI_SSID     "jj"
 #define WIFI_PASSWORD "teamyejinni"
 
-// Your Vercel deployment URL (ESP32 posts here, not directly to Supabase)
-#define API_URL "https://cat-food-tracker-one.vercel.app/api/feedings"
+// POST feedings here (writes a row)
+#define API_URL     "https://cat-food-tracker-one.vercel.app/api/feedings"
+
+// GET the display summary here { last_fed_at, today_count }
+#define SUMMARY_URL "https://cat-food-tracker-one.vercel.app/api/summary"
 
 // GPIO pins for buttons
 #define BUTTON_RAW_PIN 19
