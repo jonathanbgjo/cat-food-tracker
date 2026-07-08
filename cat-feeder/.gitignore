@@ -39,3 +39,5 @@ esp32/*.hex
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+config.h

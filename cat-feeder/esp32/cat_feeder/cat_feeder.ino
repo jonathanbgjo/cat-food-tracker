@@ -91,21 +91,48 @@ bool postFeeding(const char* mealType) {
 }
 
 void refreshSummary() {
-  if (WiFi.status() != WL_CONNECTED) return;
+  Serial.println("refreshSummary: start");
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("refreshSummary: WiFi not connected, bailing");
+    return;
+  }
+  Serial.print("refreshSummary: GET ");
+  Serial.println(SUMMARY_URL);
+
   HTTPClient http;
-  http.begin(SUMMARY_URL); // GET returns { last_fed_at, today_count }
+  http.begin(SUMMARY_URL);
   int code = http.GET();
-  if (code != 200) { Serial.printf("GET -> %d\n", code); http.end(); return; }
+  Serial.printf("refreshSummary: HTTP code = %d\n", code);
+
+  if (code != 200) {
+    String err = http.getString();
+    Serial.println("refreshSummary: non-200 body:");
+    Serial.println(err);
+    http.end();
+    return;
+  }
+
   String payload = http.getString();
   http.end();
+  Serial.println("refreshSummary: payload =");
+  Serial.println(payload);
 
   StaticJsonDocument<256> doc;
-  if (deserializeJson(doc, payload)) { Serial.println("parse fail"); return; }
+  DeserializationError e = deserializeJson(doc, payload);
+  if (e) {
+    Serial.print("refreshSummary: parse fail = ");
+    Serial.println(e.c_str());
+    return;
+  }
 
   const char* lastFed = doc["last_fed_at"];
   todayCount = doc["today_count"] | 0;
   lastFedEpoch = (lastFed && strlen(lastFed) > 0) ? parseIso8601Utc(lastFed) : 0;
+
+  Serial.printf("refreshSummary: todayCount=%d lastFedEpoch=%ld now=%ld\n",
+                todayCount, (long)lastFedEpoch, (long)time(nullptr));
 }
+
 
 void setup() {
   Serial.begin(115200);
