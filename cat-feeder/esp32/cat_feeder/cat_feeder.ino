@@ -30,17 +30,26 @@ void showMessage(const char* l1, const char* l2) {
   if (l2) { display.setCursor(0, 24); display.println(l2); }
   display.display();
 }
+// Days since epoch for a given Y/M/D (civil calendar -> days).
+// Howard Hinnant's algorithm. Valid for any reasonable date.
+static long daysFromCivil(int y, int m, int d) {
+  y -= m <= 2;
+  long era = (y >= 0 ? y : y - 399) / 400;
+  unsigned yoe = (unsigned)(y - era * 400);
+  unsigned doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;
+  unsigned doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+  return era * 146097 + (long)doe - 719468;
+}
 
-// parse "2026-07-07T03:41:39.419223+00:00" as UTC epoch
+// parse "2026-07-07T21:33:40.089587+00:00" as UTC epoch seconds.
+// No mktime/timegm: builds the epoch directly, immune to device timezone.
 time_t parseIso8601Utc(const char* s) {
   int Y, Mo, D, H, Mi, S;
   if (sscanf(s, "%d-%d-%dT%d:%d:%d", &Y, &Mo, &D, &H, &Mi, &S) != 6) return 0;
-  struct tm tm = {0};
-  tm.tm_year = Y - 1900; tm.tm_mon = Mo - 1; tm.tm_mday = D;
-  tm.tm_hour = H; tm.tm_min = Mi; tm.tm_sec = S;
-  // device runs in UTC (configTime(0,0,...)), so mktime here == UTC epoch
-  return mktime(&tm);
+  long days = daysFromCivil(Y, Mo, D);
+  return (time_t)(days * 86400L + H * 3600L + Mi * 60L + S);
 }
+
 
 void agoString(time_t past, char* buf, size_t n) {
   if (past == 0) { snprintf(buf, n, "never"); return; }
