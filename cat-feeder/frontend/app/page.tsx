@@ -38,10 +38,16 @@ export default async function Home() {
         <h1>🐱 Cat Feeder</h1>
         <p className="subtitle">Umi &amp; Ebi · feeding + weight tracker</p>
       </header>
-      <Stats feedings={feedings} />
-      <LastFed feedings={feedings} />
-      <WeightTracker weights={weights} />
-      <FeedingLog feedings={feedings} />
+      <section className="panel">
+        <Stats feedings={feedings} />
+        <LastFed feedings={feedings} />
+      </section>
+      <section className="panel">
+        <WeightTracker weights={weights} />
+      </section>
+      <section className="panel">
+        <FeedingLog feedings={feedings} />
+      </section>
     </main>
   );
 }

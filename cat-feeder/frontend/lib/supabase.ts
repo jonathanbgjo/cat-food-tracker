@@ -23,4 +23,6 @@ export type Weight = {
   cat: CatName;
   grams: number;
   weighed_at: string;
+  day: string; // YYYY-MM-DD (bucketed daily point)
+  source?: string; // 'manual' | 'whisker'
 };

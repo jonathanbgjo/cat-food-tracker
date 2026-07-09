@@ -17,6 +17,9 @@
 const SHARED_SECRET = "CHANGE_ME_to_a_long_random_string";
 const TIME_ZONE = "America/New_York";
 
+// Divider line drawn above the first feeding row of each new day.
+const DIVIDER_COLOR = "#999999";
+
 // For updateWeights():
 const SUPABASE_URL = "https://mfinezpdsjjfknvqmjvf.supabase.co";
 const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY"; // same anon key the app uses
@@ -45,6 +48,8 @@ function doPost(e) {
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
     sheet.appendRow([id, fedAtIso, mealType, readable]);
+    // Draw a divider if this feeding starts a new day. Never fail the insert over it.
+    try { addDayDividerIfNewDay(sheet); } catch (e) {}
 
     return json({ ok: true });
   } catch (err) {
@@ -125,4 +130,63 @@ function updateWeights() {
 function localDay(val) {
   const d = (val instanceof Date) ? val : new Date(val);
   return Utilities.formatDate(d, TIME_ZONE, "yyyy-MM-dd");
+}
+
+// Called from doPost: if the just-appended (last) row is a different day than the
+// row above it, draw a divider line across the top of the new row.
+function addDayDividerIfNewDay(sheet) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 3) return; // need header + at least 2 data rows to compare
+  const lastCol = sheet.getLastColumn();
+
+  const header = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+    .map(function (h) { return String(h).trim(); });
+  const colFedAt = header.indexOf("fed_at") + 1;
+  if (colFedAt < 1) return;
+
+  const curr = sheet.getRange(lastRow, colFedAt).getValue();
+  const prev = sheet.getRange(lastRow - 1, colFedAt).getValue();
+  if (!curr || !prev) return;
+
+  if (localDay(curr) !== localDay(prev)) {
+    sheet.getRange(lastRow, 1, 1, lastCol).setBorder(
+      true, null, null, null, null, null,
+      DIVIDER_COLOR, SpreadsheetApp.BorderStyle.SOLID_MEDIUM
+    );
+  }
+}
+
+// Run once (or on a daily trigger) to (re)draw dividers across the whole sheet.
+// Idempotent: clears existing top borders on the data block, then redraws them at
+// each day boundary. Safe to re-run any time.
+function applyDayDividers() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+  if (lastRow < 3) return;
+
+  const header = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+    .map(function (h) { return String(h).trim(); });
+  const colFedAt = header.indexOf("fed_at");
+  if (colFedAt < 0) throw new Error("no fed_at column");
+
+  const n = lastRow - 1; // number of data rows (row 2 .. lastRow)
+  const fed = sheet.getRange(2, colFedAt + 1, n, 1).getValues();
+
+  // Clear existing top borders on the data block first.
+  sheet.getRange(2, 1, n, lastCol)
+    .setBorder(false, null, null, null, null, null, null, null);
+
+  var prevDay = null;
+  for (var i = 0; i < n; i++) {
+    if (!fed[i][0]) { prevDay = null; continue; }
+    var day = localDay(fed[i][0]);
+    if (prevDay !== null && day !== prevDay) {
+      sheet.getRange(i + 2, 1, 1, lastCol).setBorder(
+        true, null, null, null, null, null,
+        DIVIDER_COLOR, SpreadsheetApp.BorderStyle.SOLID_MEDIUM
+      );
+    }
+    prevDay = day;
+  }
 }

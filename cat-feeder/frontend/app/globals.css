@@ -1,5 +1,10 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+:root {
+  --umi: #9d5fd0;
+  --ebi: #c47f28;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: #0f0f0f;
@@ -9,11 +14,22 @@ body {
 }
 
 main {
-  max-width: 480px;
+  max-width: 640px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.25rem;
+}
+
+/* Section panels */
+.panel {
+  background: #141414;
+  border: 1px solid #222;
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
 header h1 { font-size: 1.8rem; font-weight: 700; }
@@ -98,11 +114,49 @@ header .subtitle { color: #888; margin-top: 0.25rem; font-size: 0.9rem; }
 }
 
 /* Weights */
+.weights-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+@media (min-width: 560px) {
+  .weights-body { grid-template-columns: 1.5fr 1fr; }
+  .weights-body .cat-cards { grid-template-columns: 1fr; }
+}
+
 .cat-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
-  margin-bottom: 1rem;
+}
+
+/* Weight chart */
+.weight-chart {
+  background: #1a1a1a;
+  border: 1px solid #222;
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+.chart-legend {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+  color: #aaa;
+}
+.legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.chart-axis { fill: #666; font-size: 9px; }
+.chart-endlabel { fill: #ccc; font-size: 10px; font-weight: 600; }
+.chart-empty {
+  background: #1a1a1a;
+  border: 1px dashed #333;
+  border-radius: 12px;
+  padding: 1.5rem 1rem;
+  color: #666;
+  font-size: 0.85rem;
+  text-align: center;
 }
 
 .cat-card {
@@ -114,8 +168,8 @@ header .subtitle { color: #888; margin-top: 0.25rem; font-size: 0.9rem; }
   flex-direction: column;
   gap: 0.5rem;
 }
-.cat-card.umi { border-top: 3px solid #c98bdb; }
-.cat-card.ebi { border-top: 3px solid #dbb08b; }
+.cat-card.umi { border-top: 3px solid var(--umi); }
+.cat-card.ebi { border-top: 3px solid var(--ebi); }
 
 .cat-head {
   background: none;

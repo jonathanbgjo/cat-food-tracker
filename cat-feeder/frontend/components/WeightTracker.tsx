@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CATS, CatName, Weight } from "@/lib/supabase";
+import WeightChart from "./WeightChart";
 
 type Props = {
   weights: Weight[];
@@ -147,15 +148,20 @@ export default function WeightTracker({ weights }: Props) {
   return (
     <div className="weight-tracker">
       <h2>Weights</h2>
-      <div className="cat-cards">
-        {CATS.map((c) => (
-          <CatCard
-            key={c.id}
-            cat={c.id}
-            label={c.label}
-            entries={weights.filter((w) => w.cat === c.id)}
-          />
-        ))}
+      <div className="weights-body">
+        <div className="weight-chart-wrap">
+          <WeightChart weights={weights} />
+        </div>
+        <div className="cat-cards">
+          {CATS.map((c) => (
+            <CatCard
+              key={c.id}
+              cat={c.id}
+              label={c.label}
+              entries={weights.filter((w) => w.cat === c.id)}
+            />
+          ))}
+        </div>
       </div>
       <SyncButton />
     </div>
