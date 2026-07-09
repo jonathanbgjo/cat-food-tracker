@@ -1,0 +1,188 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { CATS, CatName, Weight } from "@/lib/supabase";
+
+type Props = {
+  weights: Weight[];
+};
+
+const kg = (grams: number) => (grams / 1000).toFixed(2);
+
+function daysBetween(a: string, b: string): number {
+  return Math.abs(new Date(a).getTime() - new Date(b).getTime()) / 86400000;
+}
+
+// Latest weigh-in vs the most recent one at least ~a week earlier.
+function trendFor(entries: Weight[]) {
+  if (entries.length === 0) return null; // entries are sorted newest-first
+  const latest = entries[0];
+
+  const prior =
+    entries.slice(1).find((e) => daysBetween(latest.weighed_at, e.weighed_at) >= 6) ??
+    entries[1];
+
+  if (!prior) return { latest, prior: null, pct: null, gapDays: 0 };
+
+  const pct = ((latest.grams - prior.grams) / prior.grams) * 100;
+  const gapDays = Math.round(daysBetween(latest.weighed_at, prior.weighed_at));
+  return { latest, prior, pct, gapDays };
+}
+
+function fmtDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function CatCard({ cat, label, entries }: { cat: CatName; label: string; entries: Weight[] }) {
+  const [open, setOpen] = useState(false);
+  const trend = trendFor(entries);
+
+  return (
+    <div className={`cat-card ${cat}`}>
+      <button className="cat-head" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        <span className="cat-name">{label}</span>
+        {trend ? (
+          <span className="cat-weight">
+            {kg(trend.latest.grams)}
+            <span className="unit">kg</span>
+          </span>
+        ) : (
+          <span className="cat-weight muted">—</span>
+        )}
+      </button>
+
+      {trend && trend.pct !== null ? (
+        <div className={`cat-trend ${trend.pct > 0 ? "up" : trend.pct < 0 ? "down" : "flat"}`}>
+          <span className="arrow">{trend.pct > 0 ? "▲" : trend.pct < 0 ? "▼" : "→"}</span>
+          <span className="pct">
+            {trend.pct > 0 ? "+" : ""}
+            {trend.pct.toFixed(1)}%
+          </span>
+          <span className="trend-note">
+            vs {kg(trend.prior!.grams)}kg · {trend.gapDays}d ago
+          </span>
+        </div>
+      ) : (
+        <div className="cat-trend flat">
+          <span className="trend-note">
+            {entries.length ? "need another weigh-in for a trend" : "no weigh-ins yet"}
+          </span>
+        </div>
+      )}
+
+      {entries.length > 0 && (
+        <>
+          <button className="history-toggle" onClick={() => setOpen((o) => !o)}>
+            {open ? "Hide history" : `History (${entries.length})`}
+          </button>
+          {open && (
+            <ul className="weight-history">
+              {entries.map((w, i) => {
+                const next = entries[i + 1];
+                const delta = next ? w.grams - next.grams : null;
+                return (
+                  <li key={w.id}>
+                    <span className="wh-date">{fmtDate(w.weighed_at)}</span>
+                    <span className="wh-kg">{kg(w.grams)}kg</span>
+                    {delta !== null && delta !== 0 && (
+                      <span className={`wh-delta ${delta > 0 ? "up" : "down"}`}>
+                        {delta > 0 ? "+" : ""}
+                        {(delta / 1000).toFixed(2)}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function AddWeightForm() {
+  const router = useRouter();
+  const [cat, setCat] = useState<CatName>("umi");
+  const [kgInput, setKgInput] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const grams = Math.round(parseFloat(kgInput) * 1000);
+    if (!Number.isFinite(grams) || grams <= 0) {
+      setError("Enter a weight in kg");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/weights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cat, grams }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Failed");
+      setKgInput("");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form className="weight-form" onSubmit={submit}>
+      <div className="cat-select">
+        {CATS.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            className={`seg ${cat === c.id ? "active" : ""}`}
+            onClick={() => setCat(c.id)}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+      <input
+        type="number"
+        step="0.01"
+        min="0"
+        inputMode="decimal"
+        placeholder="kg"
+        value={kgInput}
+        onChange={(e) => setKgInput(e.target.value)}
+      />
+      <button type="submit" className="save-btn" disabled={saving}>
+        {saving ? "…" : "Log"}
+      </button>
+      {error && <span className="form-error">{error}</span>}
+    </form>
+  );
+}
+
+export default function WeightTracker({ weights }: Props) {
+  return (
+    <div className="weight-tracker">
+      <h2>Weights</h2>
+      <div className="cat-cards">
+        {CATS.map((c) => (
+          <CatCard
+            key={c.id}
+            cat={c.id}
+            label={c.label}
+            entries={weights.filter((w) => w.cat === c.id)}
+          />
+        ))}
+      </div>
+      <AddWeightForm />
+    </div>
+  );
+}

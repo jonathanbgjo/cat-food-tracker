@@ -10,3 +10,17 @@ export type Feeding = {
   fed_at: string;
   meal_type: "raw" | "wet";
 };
+
+export type CatName = "umi" | "ebi";
+
+export const CATS: { id: CatName; label: string }[] = [
+  { id: "umi", label: "Umi" },
+  { id: "ebi", label: "Ebi" },
+];
+
+export type Weight = {
+  id: string;
+  cat: CatName;
+  grams: number;
+  weighed_at: string;
+};
