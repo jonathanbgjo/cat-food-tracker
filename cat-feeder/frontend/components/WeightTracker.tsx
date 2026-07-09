@@ -8,7 +8,8 @@ type Props = {
   weights: Weight[];
 };
 
-const kg = (grams: number) => (grams / 1000).toFixed(2);
+const G_PER_LB = 453.59237;
+const lbs = (grams: number) => (grams / G_PER_LB).toFixed(1);
 
 function daysBetween(a: string, b: string): number {
   return Math.abs(new Date(a).getTime() - new Date(b).getTime()) / 86400000;
@@ -47,8 +48,8 @@ function CatCard({ cat, label, entries }: { cat: CatName; label: string; entries
         <span className="cat-name">{label}</span>
         {trend ? (
           <span className="cat-weight">
-            {kg(trend.latest.grams)}
-            <span className="unit">kg</span>
+            {lbs(trend.latest.grams)}
+            <span className="unit">lb</span>
           </span>
         ) : (
           <span className="cat-weight muted">—</span>
@@ -63,7 +64,7 @@ function CatCard({ cat, label, entries }: { cat: CatName; label: string; entries
             {trend.pct.toFixed(1)}%
           </span>
           <span className="trend-note">
-            vs {kg(trend.prior!.grams)}kg · {trend.gapDays}d ago
+            vs {lbs(trend.prior!.grams)}lb · {trend.gapDays}d ago
           </span>
         </div>
       ) : (
@@ -87,11 +88,11 @@ function CatCard({ cat, label, entries }: { cat: CatName; label: string; entries
                 return (
                   <li key={w.id}>
                     <span className="wh-date">{fmtDate(w.weighed_at)}</span>
-                    <span className="wh-kg">{kg(w.grams)}kg</span>
+                    <span className="wh-kg">{lbs(w.grams)}lb</span>
                     {delta !== null && delta !== 0 && (
                       <span className={`wh-delta ${delta > 0 ? "up" : "down"}`}>
                         {delta > 0 ? "+" : ""}
-                        {(delta / 1000).toFixed(2)}
+                        {(delta / G_PER_LB).toFixed(2)}
                       </span>
                     )}
                   </li>
