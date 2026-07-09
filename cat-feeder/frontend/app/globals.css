@@ -173,44 +173,25 @@ header .subtitle { color: #888; margin-top: 0.25rem; font-size: 0.9rem; }
 .wh-delta.up { color: #e0704f; }
 .wh-delta.down { color: #6abf6a; }
 
-.weight-form {
+.weight-sync {
   display: flex;
-  gap: 0.5rem;
   align-items: center;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
-.cat-select { display: flex; gap: 0.25rem; }
-.seg {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  color: #999;
-  padding: 0.5rem 0.8rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-.seg.active { background: #2a2338; border-color: #c98bdb; color: #f0f0f0; }
-.weight-form input {
-  flex: 1;
-  min-width: 5rem;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-  color: #f0f0f0;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.9rem;
-}
-.save-btn {
-  background: #2d4a2d;
-  border: 1px solid #3d6a3d;
-  color: #9fe09f;
-  padding: 0.5rem 1rem;
+.sync-btn {
+  background: #23303f;
+  border: 1px solid #35506a;
+  color: #9fc4e0;
+  padding: 0.6rem 1rem;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
+  font-size: 0.85rem;
 }
-.save-btn:disabled { opacity: 0.5; cursor: default; }
-.form-error { color: #e0704f; font-size: 0.78rem; width: 100%; }
+.sync-btn:disabled { opacity: 0.6; cursor: default; }
+.sync-status { color: #6abf6a; font-size: 0.78rem; }
+.form-error { color: #e0704f; font-size: 0.78rem; }
 
 /* Log — day groups */
 .day-groups { display: flex; flex-direction: column; gap: 0.5rem; }

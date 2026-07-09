@@ -105,66 +105,40 @@ function CatCard({ cat, label, entries }: { cat: CatName; label: string; entries
   );
 }
 
-function AddWeightForm() {
+function SyncButton() {
   const router = useRouter();
-  const [cat, setCat] = useState<CatName>("umi");
-  const [kgInput, setKgInput] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function sync() {
     setError(null);
-    const grams = Math.round(parseFloat(kgInput) * 1000);
-    if (!Number.isFinite(grams) || grams <= 0) {
-      setError("Enter a weight in kg");
-      return;
-    }
-    setSaving(true);
+    setStatus(null);
+    setSyncing(true);
     try {
-      const res = await fetch("/api/weights", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cat, grams }),
-      });
-      if (!res.ok) throw new Error((await res.json()).error ?? "Failed");
-      setKgInput("");
+      const res = await fetch("/api/whisker/sync", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Sync failed");
+      const unmatched = data.unmatched?.length
+        ? ` · unmatched: ${data.unmatched.join(", ")}`
+        : "";
+      setStatus(`Synced ${data.upserted} day(s) from Litter-Robot${unmatched}`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed");
+      setError(err instanceof Error ? err.message : "Sync failed");
     } finally {
-      setSaving(false);
+      setSyncing(false);
     }
   }
 
   return (
-    <form className="weight-form" onSubmit={submit}>
-      <div className="cat-select">
-        {CATS.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            className={`seg ${cat === c.id ? "active" : ""}`}
-            onClick={() => setCat(c.id)}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
-      <input
-        type="number"
-        step="0.01"
-        min="0"
-        inputMode="decimal"
-        placeholder="kg"
-        value={kgInput}
-        onChange={(e) => setKgInput(e.target.value)}
-      />
-      <button type="submit" className="save-btn" disabled={saving}>
-        {saving ? "…" : "Log"}
+    <div className="weight-sync">
+      <button className="sync-btn" onClick={sync} disabled={syncing}>
+        {syncing ? "Syncing…" : "⟳ Sync from Litter-Robot"}
       </button>
+      {status && <span className="sync-status">{status}</span>}
       {error && <span className="form-error">{error}</span>}
-    </form>
+    </div>
   );
 }
 
@@ -182,7 +156,7 @@ export default function WeightTracker({ weights }: Props) {
           />
         ))}
       </div>
-      <AddWeightForm />
+      <SyncButton />
     </div>
   );
 }

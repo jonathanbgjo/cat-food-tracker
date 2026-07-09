@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/whisker/sync",
+      "schedule": "0 11 * * *"
+    }
+  ]
+}
