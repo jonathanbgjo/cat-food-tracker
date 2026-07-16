@@ -93,6 +93,66 @@ header .subtitle { color: #888; margin-top: 0.25rem; font-size: 0.9rem; }
   margin-top: 0.25rem;
 }
 
+/* Raw food inventory */
+.rawfood { display: flex; flex-direction: column; gap: 0.75rem; }
+.rawfood-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.restock-btn {
+  background: #23303f;
+  border: 1px solid #35506a;
+  color: #9fc4e0;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+.rawfood-stat { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+.rawfood-amount { font-size: 1.6rem; font-weight: 800; }
+.rawfood-amount .unit { font-size: 0.8rem; font-weight: 600; color: #888; margin-left: 0.3rem; }
+.rawfood-amount.low { color: #e0a48b; }
+.rawfood-pct { font-size: 0.78rem; color: #888; }
+.rawfood-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: #1c1c1c;
+  border: 1px solid #262626;
+  overflow: hidden;
+}
+.rawfood-fill {
+  height: 100%;
+  background: #4a9d5a;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+.rawfood-fill.low { background: #d0703f; }
+.rawfood-warn { font-size: 0.8rem; color: #e0a48b; }
+.rawfood-empty { font-size: 0.85rem; color: #777; }
+
+.restock-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-top: 0.25rem;
+  border-top: 1px solid #222;
+}
+.restock-field { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.7rem; color: #888; }
+.restock-amount { display: flex; align-items: center; gap: 0.3rem; }
+.restock-amount .unit { font-size: 0.8rem; color: #888; }
+.restock-form input {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  color: #f0f0f0;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.9rem;
+  max-width: 8rem;
+}
+
 /* Feeding schedule (predicted times + overdue) */
 .schedule { display: flex; flex-direction: column; gap: 0.6rem; }
 .sched-times {

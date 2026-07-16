@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { learnSchedule, predictNext, fmtHour, fmtDur } from "@/lib/schedule";
+import { getInventory, LOW_STOCK_PCT, lbFromOz } from "@/lib/inventory";
 import { sendTelegram } from "@/lib/telegram";
 
 export const dynamic = "force-dynamic";
@@ -39,51 +40,69 @@ async function check(req: Request) {
     }
   }
 
+  // --- Low raw-food stock ---
+  let stock: Record<string, unknown> = { tracked: false };
+  try {
+    const inv = await getInventory(supabase);
+    if (inv) {
+      stock = { percent: Math.round(inv.percent), alerted: false };
+      if (inv.percent <= LOW_STOCK_PCT && !inv.lowAlertSent) {
+        await sendTelegram(
+          `🥩 <b>Raw food low</b>\n` +
+            `~${lbFromOz(inv.remainingOz).toFixed(1)} lb left (${Math.round(inv.percent)}%). Time to restock.`
+        );
+        await supabase.from("restocks").update({ low_alert_sent: true }).eq("id", inv.restockId);
+        stock = { percent: Math.round(inv.percent), alerted: true };
+      }
+    }
+  } catch (e) {
+    stock = { error: e instanceof Error ? e.message : String(e) };
+  }
+
+  // --- Overdue feeding ---
   const { data: feedings, error } = await supabase
     .from("feedings")
     .select("id, fed_at, meal_type")
     .order("fed_at", { ascending: false })
     .limit(500);
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message, stock }, { status: 500 });
   }
 
   const schedule = learnSchedule(feedings);
   const pred = predictNext(schedule, feedings, new Date());
+  let feeding: Record<string, unknown> = { status: pred.status, alerted: false };
 
-  if (pred.status !== "overdue" || !pred.slotKey || pred.dueHour === null) {
-    return NextResponse.json({ ok: true, status: pred.status, alerted: false });
-  }
-
-  // De-dupe: the slot_key is unique, so a second insert for the same missed slot
-  // fails with 23505 — that means we already texted for it.
-  const { error: insErr } = await supabase
-    .from("feeding_alerts")
-    .insert([{ slot_key: pred.slotKey }]);
-  if (insErr) {
-    if (insErr.code === "23505") {
-      return NextResponse.json({ ok: true, status: "overdue", alerted: false, note: "already sent" });
+  if (pred.status === "overdue" && pred.slotKey && pred.dueHour !== null) {
+    // De-dupe: slot_key is unique, so a duplicate insert (23505) means already sent.
+    const { error: insErr } = await supabase
+      .from("feeding_alerts")
+      .insert([{ slot_key: pred.slotKey }]);
+    if (insErr && insErr.code !== "23505") {
+      return NextResponse.json({ error: insErr.message, stock }, { status: 500 });
     }
-    return NextResponse.json({ error: insErr.message }, { status: 500 });
+    if (!insErr) {
+      const lastLine =
+        pred.lastFedHour !== null ? `\nLast fed ~${fmtHour(pred.lastFedHour)}.` : "";
+      try {
+        await sendTelegram(
+          `🐱 <b>Umi &amp; Ebi are overdue</b>\n` +
+            `Usually fed by ~${fmtHour(pred.dueHour)} — it's been ${fmtDur(pred.minutes)}.` +
+            lastLine
+        );
+        feeding = { status: "overdue", alerted: true, slotKey: pred.slotKey };
+      } catch (e) {
+        return NextResponse.json(
+          { error: `Telegram send failed: ${e instanceof Error ? e.message : e}`, stock },
+          { status: 502 }
+        );
+      }
+    } else {
+      feeding = { status: "overdue", alerted: false, note: "already sent" };
+    }
   }
 
-  const lastLine =
-    pred.lastFedHour !== null ? `\nLast fed ~${fmtHour(pred.lastFedHour)}.` : "";
-  const msg =
-    `🐱 <b>Umi &amp; Ebi are overdue</b>\n` +
-    `Usually fed by ~${fmtHour(pred.dueHour)} — it's been ${fmtDur(pred.minutes)}.` +
-    lastLine;
-
-  try {
-    await sendTelegram(msg);
-  } catch (e) {
-    return NextResponse.json(
-      { error: `Telegram send failed: ${e instanceof Error ? e.message : e}` },
-      { status: 502 }
-    );
-  }
-
-  return NextResponse.json({ ok: true, status: "overdue", alerted: true, slotKey: pred.slotKey });
+  return NextResponse.json({ ok: true, feeding, stock });
 }
 
 export async function GET(req: Request) {

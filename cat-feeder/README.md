@@ -39,11 +39,13 @@ mirrors everything.
 
 ## Setup
 
-1. **Supabase** — run the SQL in `frontend/sql/` in order:
-   `weights.sql` → `weights_whisker.sql`.
+1. **Supabase** — run the SQL files in `frontend/sql/`:
+   `weights.sql` → `weights_whisker.sql`, plus `feeding_alerts.sql` and
+   `restocks.sql`.
 2. **Env** (`frontend/.env.local`, see `frontend/.env.example`):
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `WHISKER_EMAIL`, `WHISKER_PASSWORD` (your Litter-Robot / Whisker login)
+   - `RESTOCK_PASSWORD` (gate for the raw-food Restock button)
 3. **Run** — `cd frontend && npm install && npm run dev`.
 4. **Weight sync** — click "Sync from Litter-Robot" on the site, or let the daily
    Vercel cron (`frontend/vercel.json`) hit `/api/whisker/sync`. Set the same
@@ -71,6 +73,14 @@ overdue:
    Hobby only allows daily). It self-suppresses during the overnight lull and texts
    at most once per missed slot.
    - Test the wiring anytime: `/api/schedule/check?key=<CRON_SECRET>&test=1`.
+
+## Raw food inventory
+
+Hit **Restock** (password-gated) to log a bag of raw food. Each raw feeding counts
+down **2 oz** (1 oz × 2 cats); the panel shows lb + % remaining. When it drops to
+**≤30%**, the schedule-check cron sends a Telegram "restock soon" alert (once per
+restock cycle). Restock amount is per-event — enter 20 lb normally, 30 lb for a big
+bag. Requires `restocks.sql` + `RESTOCK_PASSWORD`.
 
 ## Notes
 

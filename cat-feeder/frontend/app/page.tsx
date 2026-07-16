@@ -3,7 +3,9 @@ import LastFed from "@/components/LastFed";
 import FeedingSchedule from "@/components/FeedingSchedule";
 import FeedingLog from "@/components/FeedingLog";
 import WeightTracker from "@/components/WeightTracker";
+import RawFoodPanel from "@/components/RawFoodPanel";
 import { learnSchedule } from "@/lib/schedule";
+import { getInventory } from "@/lib/inventory";
 
 export const revalidate = 30; // revalidate every 30 seconds
 
@@ -43,10 +45,11 @@ async function getWeights() {
 }
 
 export default async function Home() {
-  const [feedings, weights, scheduleFeedings] = await Promise.all([
+  const [feedings, weights, scheduleFeedings, inventory] = await Promise.all([
     getFeedings(),
     getWeights(),
     getScheduleFeedings(),
+    getInventory(supabase),
   ]);
   const schedule = learnSchedule(scheduleFeedings);
 
@@ -59,6 +62,9 @@ export default async function Home() {
       <section className="panel">
         <LastFed feedings={feedings} />
         <FeedingSchedule schedule={schedule} feedings={feedings} />
+      </section>
+      <section className="panel">
+        <RawFoodPanel inventory={inventory} />
       </section>
       <div className="dashboard-grid">
         <section className="panel">
