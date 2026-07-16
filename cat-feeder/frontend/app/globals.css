@@ -14,7 +14,7 @@ body {
 }
 
 main {
-  max-width: 640px;
+  max-width: 900px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -30,6 +30,25 @@ main {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  min-width: 0;
+}
+
+/* Let grid/flex children shrink below their intrinsic width (prevents overflow) */
+.dashboard-grid, .status, .last-fed, .cat-cards, .weights-body,
+.meal-card, .cat-card, .weight-chart, .log-entry, .day-group, .day-header {
+  min-width: 0;
+}
+.weight-chart svg { display: block; max-width: 100%; }
+
+/* Weights | History two-column dashboard */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (min-width: 800px) {
+  .dashboard-grid { grid-template-columns: 1fr 1fr; }
 }
 
 header h1 { font-size: 1.8rem; font-weight: 700; }
@@ -74,6 +93,45 @@ header .subtitle { color: #888; margin-top: 0.25rem; font-size: 0.9rem; }
   margin-top: 0.25rem;
 }
 
+/* Feeding schedule (predicted times + overdue) */
+.schedule { display: flex; flex-direction: column; gap: 0.6rem; }
+.sched-times {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.sched-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #777;
+}
+.sched-chip {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #ccc;
+  background: #1c1c1c;
+  border: 1px solid #2a2a2a;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+}
+.sched-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid;
+}
+.sched-icon { font-size: 1rem; }
+.sched-sub { color: #999; }
+.sched-banner.upcoming { background: #16211a; border-color: #24402c; color: #cfe8d5; }
+.sched-banner.quiet { background: #1a1a22; border-color: #2a2a3a; color: #b8b8c8; }
+.sched-banner.overdue { background: #2a1a16; border-color: #5a2f26; color: #f0c8b8; }
+.sched-banner.overdue strong { color: #f0a48b; }
+
 /* Section headings shared by log + weights */
 .feeding-log h2,
 .weight-tracker h2 {
@@ -85,44 +143,35 @@ header .subtitle { color: #888; margin-top: 0.25rem; font-size: 0.9rem; }
   margin-bottom: 0.75rem;
 }
 
-/* Stats bar */
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
+/* Status hero: total line + last-fed cards */
+.status { display: flex; flex-direction: column; gap: 0.85rem; }
+.today-total {
+  text-align: center;
+  color: #999;
+  font-size: 0.9rem;
 }
+.today-total strong { color: #f0f0f0; font-size: 1.1rem; }
 
-.stat {
-  background: #1a1a1a;
-  border: 1px solid #222;
-  border-radius: 12px;
-  padding: 1rem 0.75rem;
+.meal-head {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
+  justify-content: space-between;
 }
-
-.stat-value { font-size: 1.9rem; font-weight: 800; line-height: 1; }
-.stat-value.raw-text { color: #6abf6a; }
-.stat-value.wet-text { color: #6a9abf; }
-.stat-label {
+.today-badge {
   font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #888;
+  font-weight: 600;
+  color: #aaa;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
 }
 
-/* Weights */
+/* Weights — chart stacked above the two cat cards (it lives in a half-width column) */
 .weights-body {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
   align-items: start;
-}
-@media (min-width: 560px) {
-  .weights-body { grid-template-columns: 1.5fr 1fr; }
-  .weights-body .cat-cards { grid-template-columns: 1fr; }
 }
 
 .cat-cards {
@@ -232,6 +281,7 @@ header .subtitle { color: #888; margin-top: 0.25rem; font-size: 0.9rem; }
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
+  margin-top: 1rem;
 }
 .sync-btn {
   background: #23303f;

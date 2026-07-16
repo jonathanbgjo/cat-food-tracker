@@ -24,6 +24,11 @@ mirrors everything.
  Google Apps Script
    ├─ doPost: Supabase webhook appends each feeding row (+ EST time)
    └─ updateWeights: daily trigger fills "Umi/Ebi weight" columns (lb)
+
+ Feeding schedule (ML)
+   ├─ learnSchedule: k-means clusters feeding times into daily slots
+   ├─ predictNext: next expected feeding / overdue detection (in-app banner)
+   └─ /api/schedule/check ◄── external cron ──► Telegram "overdue" alert
 ```
 
 ## Stack
@@ -45,6 +50,27 @@ mirrors everything.
    `WHISKER_*` env vars in Vercel for the cron.
 5. **Google Sheet** — paste `apps-script/updateWeights.gs` into the sheet's Apps
    Script project, set the anon key, and add a daily trigger for `updateWeights`.
+
+## Feeding schedule + overdue alerts (Telegram)
+
+The app learns the cats' feeding rhythm (k-means on time-of-day) and shows a live
+"next feeding / overdue" banner. To also get a **free Telegram text** when they're
+overdue:
+
+1. **Create a bot** — message [@BotFather](https://t.me/BotFather) → `/newbot` →
+   copy the token into `TELEGRAM_BOT_TOKEN`.
+2. **Get your chat id** — send any message to your new bot, then open
+   `https://api.telegram.org/bot<TOKEN>/getUpdates` and read `result[].message.chat.id`
+   into `TELEGRAM_CHAT_ID`. (For a group alert to you + Mary, add the bot to a group
+   and use the group's negative chat id.)
+3. **Run** `frontend/sql/feeding_alerts.sql` in Supabase (de-dupe table).
+4. **Set `CRON_SECRET`** to any random string (gates the endpoint).
+5. **Schedule the check** — point a free cron at
+   `https://<your-app>/api/schedule/check?key=<CRON_SECRET>` every ~30 min
+   (e.g. [cron-job.org](https://cron-job.org); or Vercel cron if you're on Pro —
+   Hobby only allows daily). It self-suppresses during the overnight lull and texts
+   at most once per missed slot.
+   - Test the wiring anytime: `/api/schedule/check?key=<CRON_SECRET>&test=1`.
 
 ## Notes
 

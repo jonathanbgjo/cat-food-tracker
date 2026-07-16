@@ -1,8 +1,9 @@
 import { supabase } from "@/lib/supabase";
 import LastFed from "@/components/LastFed";
-import Stats from "@/components/Stats";
+import FeedingSchedule from "@/components/FeedingSchedule";
 import FeedingLog from "@/components/FeedingLog";
 import WeightTracker from "@/components/WeightTracker";
+import { learnSchedule } from "@/lib/schedule";
 
 export const revalidate = 30; // revalidate every 30 seconds
 
@@ -14,6 +15,18 @@ async function getFeedings() {
     .limit(50);
 
   if (error) throw error;
+  return data;
+}
+
+// More history (fed_at only) to learn the feeding schedule from.
+async function getScheduleFeedings() {
+  const { data, error } = await supabase
+    .from("feedings")
+    .select("id, fed_at, meal_type")
+    .order("fed_at", { ascending: false })
+    .limit(500);
+
+  if (error) return [];
   return data;
 }
 
@@ -30,7 +43,12 @@ async function getWeights() {
 }
 
 export default async function Home() {
-  const [feedings, weights] = await Promise.all([getFeedings(), getWeights()]);
+  const [feedings, weights, scheduleFeedings] = await Promise.all([
+    getFeedings(),
+    getWeights(),
+    getScheduleFeedings(),
+  ]);
+  const schedule = learnSchedule(scheduleFeedings);
 
   return (
     <main>
@@ -39,15 +57,17 @@ export default async function Home() {
         <p className="subtitle">Umi &amp; Ebi · feeding + weight tracker</p>
       </header>
       <section className="panel">
-        <Stats feedings={feedings} />
         <LastFed feedings={feedings} />
+        <FeedingSchedule schedule={schedule} feedings={feedings} />
       </section>
-      <section className="panel">
-        <WeightTracker weights={weights} />
-      </section>
-      <section className="panel">
-        <FeedingLog feedings={feedings} />
-      </section>
+      <div className="dashboard-grid">
+        <section className="panel">
+          <WeightTracker weights={weights} />
+        </section>
+        <section className="panel">
+          <FeedingLog feedings={feedings} />
+        </section>
+      </div>
     </main>
   );
 }

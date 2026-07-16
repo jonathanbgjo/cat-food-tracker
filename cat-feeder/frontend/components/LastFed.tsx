@@ -18,33 +18,50 @@ function timeSince(dateStr: string): string {
   return "just now";
 }
 
+function isToday(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}
+
+const MEALS: { type: "raw" | "wet"; label: string }[] = [
+  { type: "raw", label: "Raw" },
+  { type: "wet", label: "Wet" },
+];
+
 export default function LastFed({ feedings }: Props) {
-  const lastRaw = feedings.find((f) => f.meal_type === "raw");
-  const lastWet = feedings.find((f) => f.meal_type === "wet");
+  const totalToday = feedings.filter((f) => isToday(f.fed_at)).length;
 
   return (
-    <div className="last-fed">
-      <div className="meal-card raw">
-        <span className="label">Raw</span>
-        <span className="time">
-          {lastRaw ? timeSince(lastRaw.fed_at) : "never"}
-        </span>
-        {lastRaw && (
-          <span className="timestamp">
-            {new Date(lastRaw.fed_at).toLocaleString()}
-          </span>
-        )}
-      </div>
-      <div className="meal-card wet">
-        <span className="label">Wet</span>
-        <span className="time">
-          {lastWet ? timeSince(lastWet.fed_at) : "never"}
-        </span>
-        {lastWet && (
-          <span className="timestamp">
-            {new Date(lastWet.fed_at).toLocaleString()}
-          </span>
-        )}
+    <div className="status">
+      <p className="today-total">
+        <strong>{totalToday}</strong> {totalToday === 1 ? "feeding" : "feedings"} today
+      </p>
+      <div className="last-fed">
+        {MEALS.map(({ type, label }) => {
+          const last = feedings.find((f) => f.meal_type === type);
+          const countToday = feedings.filter(
+            (f) => f.meal_type === type && isToday(f.fed_at)
+          ).length;
+          return (
+            <div key={type} className={`meal-card ${type}`}>
+              <div className="meal-head">
+                <span className="label">{label}</span>
+                <span className="today-badge">{countToday} today</span>
+              </div>
+              <span className="time">{last ? timeSince(last.fed_at) : "never"}</span>
+              {last && (
+                <span className="timestamp">
+                  {new Date(last.fed_at).toLocaleString()}
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
