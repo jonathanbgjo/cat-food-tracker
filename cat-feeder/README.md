@@ -10,7 +10,7 @@ mirrors everything.
 ```
  ESP32 (buttons + OLED)
    │  POST /api/feedings          (log raw/wet)
-   │  GET  /api/summary           (show "last fed" + today count on the OLED)
+   │  GET  /api/summary           (OLED status; doubles as offline heartbeat)
    ▼
  Next.js app  ──────────────►  Supabase (Postgres)
    ▲   │                          ├─ feedings (id, fed_at, meal_type)
@@ -40,8 +40,8 @@ mirrors everything.
 ## Setup
 
 1. **Supabase** — run the SQL files in `frontend/sql/`:
-   `weights.sql` → `weights_whisker.sql`, plus `feeding_alerts.sql` and
-   `restocks.sql`.
+   `weights.sql` → `weights_whisker.sql`, plus `feeding_alerts.sql`,
+   `restocks.sql`, `feedings_delete.sql`, and `device_status.sql`.
 2. **Env** (`frontend/.env.local`, see `frontend/.env.example`):
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `WHISKER_EMAIL`, `WHISKER_PASSWORD` (your Litter-Robot / Whisker login)
@@ -81,6 +81,18 @@ down **2 oz** (1 oz × 2 cats); the panel shows lb + % remaining. When it drops 
 **≤30%**, the schedule-check cron sends a Telegram "restock soon" alert (once per
 restock cycle). Restock amount is per-event — enter 20 lb normally, 30 lb for a big
 bag. Requires `restocks.sql` + `RESTOCK_PASSWORD`.
+
+## Manual logging, edits & offline detection
+
+- **Log a feeding from the web** — "＋ Log a feeding" in the status panel
+  (password-gated). Pick raw/wet and optionally backdate it (for one you forgot to
+  press). Handy when you're away and left food out.
+- **Undo / correct** — "Edit" in the History panel reveals a ✕ on each entry to
+  delete a mis-press (password-gated). Needs `feedings_delete.sql`.
+- **Feeder offline alert** — the ESP32's `/api/summary` poll records a heartbeat; if
+  it goes quiet for >20 min, the schedule-check cron sends a Telegram "feeder
+  offline" alert (so silence doesn't get mistaken for "overdue"). Needs
+  `device_status.sql`. All the above reuse `RESTOCK_PASSWORD`.
 
 ## Notes
 

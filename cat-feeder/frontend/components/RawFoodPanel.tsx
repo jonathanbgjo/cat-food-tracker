@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Inventory, LOW_STOCK_PCT, OZ_PER_LB } from "@/lib/inventory";
+import {
+  Inventory,
+  LOW_STOCK_PCT,
+  OZ_PER_LB,
+  REORDER_URL,
+  REORDER_LABEL,
+} from "@/lib/inventory";
 
 type Props = {
   inventory: Inventory | null;
@@ -64,7 +70,8 @@ export default function RawFoodPanel({ inventory }: Props) {
               <span className="unit">lb left</span>
             </span>
             <span className="rawfood-pct">
-              {Math.round(inventory.percent)}% · {inventory.rawSince} raw feedings since restock
+              {Math.round(inventory.percent)}%
+              {inventory.daysLeft !== null && ` · ≈${Math.round(inventory.daysLeft)} days left`}
             </span>
           </div>
           <div className="rawfood-bar">
@@ -72,6 +79,14 @@ export default function RawFoodPanel({ inventory }: Props) {
               className={`rawfood-fill ${low ? "low" : ""}`}
               style={{ width: `${pct}%` }}
             />
+          </div>
+          <div className="rawfood-foot">
+            <span className="rawfood-since">{inventory.rawSince} raw feedings since restock</span>
+            {low && (
+              <a className="reorder-link" href={REORDER_URL} target="_blank" rel="noopener noreferrer">
+                Reorder from {REORDER_LABEL} →
+              </a>
+            )}
           </div>
           {low && <p className="rawfood-warn">Running low — time to restock soon.</p>}
         </>

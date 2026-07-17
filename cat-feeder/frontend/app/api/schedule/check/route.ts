@@ -40,6 +40,32 @@ async function check(req: Request) {
     }
   }
 
+  // --- ESP32 offline detection ---
+  const OFFLINE_MIN = 20;
+  let device: Record<string, unknown> = { tracked: false };
+  try {
+    const { data: ds } = await supabase
+      .from("device_status")
+      .select("*")
+      .eq("id", "esp32")
+      .maybeSingle();
+    if (ds) {
+      const staleMin = (Date.now() - new Date(ds.last_seen).getTime()) / 60000;
+      device = { staleMin: Math.round(staleMin), alerted: false };
+      if (staleMin > OFFLINE_MIN && !ds.offline_alert_sent) {
+        await sendTelegram(
+          `📵 <b>Feeder offline</b>\n` +
+            `No signal from the ESP32 for ~${Math.round(staleMin)} min. ` +
+            `Feedings won't be logging.`
+        );
+        await supabase.from("device_status").update({ offline_alert_sent: true }).eq("id", "esp32");
+        device = { staleMin: Math.round(staleMin), alerted: true };
+      }
+    }
+  } catch (e) {
+    device = { error: e instanceof Error ? e.message : String(e) };
+  }
+
   // --- Low raw-food stock ---
   let stock: Record<string, unknown> = { tracked: false };
   try {
@@ -47,9 +73,12 @@ async function check(req: Request) {
     if (inv) {
       stock = { percent: Math.round(inv.percent), alerted: false };
       if (inv.percent <= LOW_STOCK_PCT && !inv.lowAlertSent) {
+        const daysLine =
+          inv.daysLeft !== null ? ` (~${Math.round(inv.daysLeft)} days left)` : "";
         await sendTelegram(
           `🥩 <b>Raw food low</b>\n` +
-            `~${lbFromOz(inv.remainingOz).toFixed(1)} lb left (${Math.round(inv.percent)}%). Time to restock.`
+            `~${lbFromOz(inv.remainingOz).toFixed(1)} lb left (${Math.round(inv.percent)}%)${daysLine}. ` +
+            `Time to reorder.`
         );
         await supabase.from("restocks").update({ low_alert_sent: true }).eq("id", inv.restockId);
         stock = { percent: Math.round(inv.percent), alerted: true };
@@ -102,7 +131,7 @@ async function check(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, feeding, stock });
+  return NextResponse.json({ ok: true, feeding, stock, device });
 }
 
 export async function GET(req: Request) {

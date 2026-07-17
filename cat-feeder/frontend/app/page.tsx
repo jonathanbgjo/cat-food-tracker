@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import LastFed from "@/components/LastFed";
 import FeedingSchedule from "@/components/FeedingSchedule";
+import LogFeeding from "@/components/LogFeeding";
 import FeedingLog from "@/components/FeedingLog";
 import WeightTracker from "@/components/WeightTracker";
 import RawFoodPanel from "@/components/RawFoodPanel";
@@ -62,6 +63,7 @@ export default async function Home() {
       <section className="panel">
         <LastFed feedings={feedings} />
         <FeedingSchedule schedule={schedule} feedings={feedings} />
+        <LogFeeding />
       </section>
       <section className="panel">
         <RawFoodPanel inventory={inventory} />

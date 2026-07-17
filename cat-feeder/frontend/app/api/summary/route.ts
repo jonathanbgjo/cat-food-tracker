@@ -9,7 +9,20 @@ const supabase = createClient(
 
 // GET /api/summary -> { last_fed_at, today_count }
 // All date/timezone/de-dupe logic lives in the Postgres RPC feeding_summary().
+// The ESP32 polls this ~every 60s, so it doubles as a device heartbeat.
 export async function GET() {
+  // Record the heartbeat. Never let a failure here break the ESP32's poll.
+  try {
+    await supabase
+      .from("device_status")
+      .upsert(
+        { id: "esp32", last_seen: new Date().toISOString(), offline_alert_sent: false },
+        { onConflict: "id" }
+      );
+  } catch {
+    /* device_status table may not exist yet — ignore */
+  }
+
   const { data, error } = await supabase.rpc("feeding_summary");
 
   if (error) {

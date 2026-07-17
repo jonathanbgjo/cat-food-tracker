@@ -153,6 +153,77 @@ header .subtitle { color: #888; margin-top: 0.25rem; font-size: 0.9rem; }
   max-width: 8rem;
 }
 
+.rawfood-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.rawfood-since { font-size: 0.75rem; color: #777; }
+.reorder-link { font-size: 0.8rem; color: #7fb0e0; font-weight: 600; text-decoration: none; }
+.reorder-link:hover { text-decoration: underline; }
+
+/* Manual log-feeding control */
+.logfeed { display: flex; flex-direction: column; gap: 0.6rem; }
+.logfeed-toggle, .edit-toggle {
+  align-self: flex-start;
+  background: none;
+  border: 1px solid #2a2a2a;
+  color: #9fc4e0;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.logfeed-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding-top: 0.6rem;
+  border-top: 1px solid #222;
+}
+.logfeed-when { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.7rem; color: #888; }
+.logfeed-form input, .edit-bar input {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  color: #f0f0f0;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.85rem;
+}
+.seg-group { display: flex; gap: 0.25rem; }
+.seg {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #999;
+  padding: 0.45rem 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.seg.active { background: #23303f; border-color: #35506a; color: #f0f0f0; }
+
+/* History edit / delete */
+.log-head { display: flex; align-items: center; justify-content: space-between; }
+.log-head h2 { margin-bottom: 0; }
+.edit-bar { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.entry-delete {
+  margin-left: auto;
+  background: #2a1a16;
+  border: 1px solid #5a2f26;
+  color: #e0906f;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+.entry-delete:disabled { opacity: 0.5; }
+
 /* Feeding schedule (predicted times + overdue) */
 .schedule { display: flex; flex-direction: column; gap: 0.6rem; }
 .sched-times {

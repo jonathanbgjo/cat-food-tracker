@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Feeding } from "@/lib/supabase";
 
 type Props = {
@@ -58,18 +59,72 @@ function timeOfDay(dateStr: string): string {
 }
 
 export default function FeedingLog({ feedings }: Props) {
+  const router = useRouter();
   const groups = groupByDay(feedings);
   // Today (first group) starts expanded; older days collapsed.
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     groups.length ? { [groups[0].key]: true } : {}
   );
+  const [editing, setEditing] = useState(false);
+  const [password, setPassword] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const toggle = (key: string) =>
     setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
 
+  async function remove(id: string) {
+    if (!password) {
+      setError("Enter the password first");
+      return;
+    }
+    setError(null);
+    setBusyId(id);
+    try {
+      const res = await fetch("/api/feedings/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, password }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Failed");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
     <div className="feeding-log">
-      <h2>History</h2>
+      <div className="log-head">
+        <h2>History</h2>
+        {feedings.length > 0 && (
+          <button
+            className="edit-toggle"
+            onClick={() => {
+              setEditing((e) => !e);
+              setError(null);
+            }}
+          >
+            {editing ? "Done" : "Edit"}
+          </button>
+        )}
+      </div>
+
+      {editing && (
+        <div className="edit-bar">
+          <input
+            type="password"
+            placeholder="Password to delete"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="off"
+          />
+          {error && <span className="form-error">{error}</span>}
+        </div>
+      )}
+
       {feedings.length === 0 && (
         <p className="empty">No feedings logged yet.</p>
       )}
@@ -99,6 +154,16 @@ export default function FeedingLog({ feedings }: Props) {
                     <li key={f.id} className={`log-entry ${f.meal_type}`}>
                       <span className="pill">{f.meal_type}</span>
                       <span className="log-time">{timeOfDay(f.fed_at)}</span>
+                      {editing && (
+                        <button
+                          className="entry-delete"
+                          onClick={() => remove(f.id)}
+                          disabled={busyId === f.id}
+                          title="Delete this feeding"
+                        >
+                          {busyId === f.id ? "…" : "✕"}
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>

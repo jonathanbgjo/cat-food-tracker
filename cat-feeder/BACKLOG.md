@@ -2,6 +2,15 @@
 
 Future ideas, not yet built.
 
+## Two-way Telegram
+Let the bot receive commands, not just send alerts. Reply to the bot to log a
+feeding remotely ("fed wet", "fed raw") or query status ("when were they last
+fed?", "how much food left?"). Needs a Telegram webhook → a new
+`/api/telegram/webhook` route that verifies the update, parses the command, and
+calls the existing insert / `getInventory` / `predictNext` logic. Bonus: an inline
+"Fed ✅" button on the overdue alert to log a feeding in one tap, which also gives
+"who fed them" attribution (the Telegram sender).
+
 ## Email alerts (in addition to Telegram)
 Overdue-feeding and low-stock alerts currently go to Telegram only. To add email:
 add a `sendEmail()` helper (Resend REST API is dependency-free — `POST
