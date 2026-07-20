@@ -219,9 +219,13 @@ export function predictNext(schedule: Schedule, feedings: Feeding[], now: Date):
   }
   instances.sort((a, b) => a.val - b.val);
 
+  // A slot is "covered" if the cats were fed any time from ~its expected time
+  // onward (a feeding at or after the slot satisfies it, even if late) OR within
+  // its window just before it. Overdue therefore means "hasn't eaten since around
+  // the last expected feeding" — a recent feeding always clears it.
   const covered = (inst: { val: number; std: number }) => {
     const win = Math.max(COVER_H, inst.std * 1.5);
-    return feedVals.some((v) => Math.abs(v - inst.val) <= win);
+    return feedVals.some((v) => v >= inst.val - win);
   };
   const keyOf = (inst: { day: number; hour: number }) =>
     `${inst.day}@${Math.round(inst.hour * 60)}`;
