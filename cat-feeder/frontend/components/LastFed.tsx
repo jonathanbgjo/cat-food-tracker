@@ -12,8 +12,11 @@ function timeSince(dateStr: string): string {
   const hours = Math.floor(mins / 60);
   const days = Math.floor(hours / 24);
 
-  if (days > 0) return `${days}d ago`;
-  if (hours > 0) return `${hours}h ago`;
+  if (days > 0) {
+    const remH = hours % 24;
+    return remH > 0 ? `${days}d ${remH}h ago` : `${days}d ago`;
+  }
+  if (hours > 0) return `${hours}h ${mins % 60}m ago`;
   if (mins > 0) return `${mins}m ago`;
   return "just now";
 }
