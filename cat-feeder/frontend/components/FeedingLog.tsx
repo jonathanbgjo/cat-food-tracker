@@ -154,6 +154,11 @@ export default function FeedingLog({ feedings }: Props) {
                     <li key={f.id} className={`log-entry ${f.meal_type}`}>
                       <span className="pill">{f.meal_type}</span>
                       <span className="log-time">{timeOfDay(f.fed_at)}</span>
+                      {f.source === "petlibro" && (
+                        <span className="auto-badge" title="Logged automatically by the Polar feeder">
+                          auto
+                        </span>
+                      )}
                       {editing && (
                         <button
                           className="entry-delete"

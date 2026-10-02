@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { learnSchedule, predictNext, fmtHour, fmtDur } from "@/lib/schedule";
 import { getInventory, LOW_STOCK_PCT, lbFromOz } from "@/lib/inventory";
 import { sendTelegram } from "@/lib/telegram";
+import { syncPetLibro } from "@/lib/petlibro";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,18 @@ async function check(req: Request) {
     stock = { error: e instanceof Error ? e.message : String(e) };
   }
 
+  // --- PetLibro (Polar wet feeder) auto-feeds ---
+  // Runs before the overdue check so an automatic wet feed counts as "fed".
+  let petlibro: Record<string, unknown> = { tracked: false };
+  if (process.env.PETLIBRO_EMAIL) {
+    try {
+      const r = await syncPetLibro(supabase);
+      petlibro = r.ok ? { inserted: r.inserted } : { error: r.error };
+    } catch (e) {
+      petlibro = { error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
   // --- Overdue feeding ---
   const { data: feedings, error } = await supabase
     .from("feedings")
@@ -131,7 +144,7 @@ async function check(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, feeding, stock, device });
+  return NextResponse.json({ ok: true, feeding, stock, device, petlibro });
 }
 
 export async function GET(req: Request) {

@@ -9,6 +9,7 @@ export type Feeding = {
   id: string;
   fed_at: string;
   meal_type: "raw" | "wet";
+  source?: string | null; // 'petlibro' = logged automatically by the Polar feeder
 };
 
 export type CatName = "umi" | "ebi";

@@ -41,7 +41,8 @@ mirrors everything.
 
 1. **Supabase** — run the SQL files in `frontend/sql/`:
    `weights.sql` → `weights_whisker.sql`, plus `feeding_alerts.sql`,
-   `restocks.sql`, `feedings_delete.sql`, and `device_status.sql`.
+   `restocks.sql`, `feedings_delete.sql`, `device_status.sql`, and
+   `feedings_petlibro.sql`.
 2. **Env** (`frontend/.env.local`, see `frontend/.env.example`):
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `WHISKER_EMAIL`, `WHISKER_PASSWORD` (your Litter-Robot / Whisker login)
@@ -81,6 +82,28 @@ down **2 oz** (1 oz × 2 cats); the panel shows lb + % remaining. When it drops 
 **≤30%**, the schedule-check cron sends a Telegram "restock soon" alert (once per
 restock cycle). Restock amount is per-event — enter 20 lb normally, 30 lb for a big
 bag. Requires `restocks.sql` + `RESTOCK_PASSWORD`.
+
+## PetLibro Polar wet feeder (auto-logged wet feedings)
+
+When the Polar feeds, the app logs a **wet** feeding stamped with the time it
+actually fed (shown with an "auto" badge in History). It rides on the existing
+schedule-check cron (~30 min), before the overdue check, so an auto-feed counts.
+
+1. **Second PetLibro account** — PetLibro allows one login per account, so the
+   sync would sign your phone out. Create another account and share the Polar to
+   it from the PetLibro app.
+2. **Run** `frontend/sql/feedings_petlibro.sql` (adds `source` + unique `external_id`).
+3. **Set** `PETLIBRO_EMAIL` / `PETLIBRO_PASSWORD` (the second account) in Vercel.
+4. **Verify once** — open `/api/petlibro/sync?key=<CRON_SECRET>&debug=1`. It logs
+   nothing; it lists the feeder found and every activity-record type from the last
+   2 days (`seenTypes`). If the feed events aren't picked up by default, set
+   `PETLIBRO_FEED_TYPES` to the right type name(s), comma-separated.
+   `PETLIBRO_DEVICE_SN` pins a specific device if auto-detection misses it.
+
+Notes: the API is unofficial (community-reverse-engineered) and can break; a
+failure just shows up as `petlibro.error` in the cron's JSON. Deleting an auto
+entry sticks (the sync only reads events newer than the last one it logged).
+Don't also press the ESP32 wet button for an auto-feed, or it'll count twice.
 
 ## Manual logging, edits & offline detection
 
